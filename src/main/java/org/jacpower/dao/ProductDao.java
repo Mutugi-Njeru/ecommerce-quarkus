@@ -102,6 +102,19 @@ public class ProductDao {
         }
         return productsJson.add("products", products).build();
     }
+    //update remaining stock
+    public boolean updateRemainingStock(int units, int productId){
+        String query="UPDATE products SET in_stock=(in_stock - ?) WHERE product_id=?";
+        boolean status=false;
+        try (Connection connection = ads.getConnection(); PreparedStatement preparedStatement= connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, units);
+            preparedStatement.setInt(2, productId);
+            status=preparedStatement.executeUpdate()>0;
+        } catch (SQLException ex) {
+            logger.error(Constants.ERROR_LOG_TEMPLATE, Constants.ERROR, ex.getClass().getSimpleName(), ex.getMessage());
+        }
+        return status;
+    }
 
 
 
