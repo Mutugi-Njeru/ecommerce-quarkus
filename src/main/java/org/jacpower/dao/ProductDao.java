@@ -6,6 +6,7 @@ import jakarta.inject.Inject;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import org.jacpower.model.Product;
+import org.jacpower.model.ProductUpdateDto;
 import org.jacpower.utility.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,6 +116,107 @@ public class ProductDao {
         }
         return status;
     }
+
+    //get products by category
+    public JsonObject getProductsByCategory(String category){
+        String query= """
+                SELECT p.product_id, p.name, pc.category, p.in_stock, p.price, pd.full_description
+                FROM products p
+                INNER JOIN product_categories pc ON p.category_id=pc.category_id
+                INNER JOIN product_description pd ON p.description_id=pd.description_id
+                WHERE pc.category like ?""";
+        String categoryLike= "%" + category + "%";
+        var productsJson=Json.createObjectBuilder();
+        var productsArray=Json.createArrayBuilder();
+        try (Connection connection = ads.getConnection(); PreparedStatement preparedStatement= connection.prepareStatement(query)) {
+            preparedStatement.setString(1, categoryLike);
+            ResultSet resultSet= preparedStatement.executeQuery();
+            while (resultSet.next()){
+                var product=Json.createObjectBuilder()
+                        .add("productId", resultSet.getInt(1))
+                        .add("name", resultSet.getString(2))
+                        .add("category", resultSet.getString(3))
+                        .add("itemsInStock", resultSet.getInt(4))
+                        .add("pricePerItem", resultSet.getInt(5))
+                        .add("description", resultSet.getString(6));
+                productsArray.add(product);
+            }
+
+        } catch (SQLException ex) {
+            logger.error(Constants.ERROR_LOG_TEMPLATE, Constants.ERROR, ex.getClass().getSimpleName(), ex.getMessage());
+        }
+        return productsJson.add("products", productsArray).build();
+    }
+    // update products units
+    public boolean updateProductUnits(int units, int productId){
+        String query="UPDATE products SET in_stock=? WHERE product_id=?";
+        boolean status=false;
+        try (Connection connection = ads.getConnection(); PreparedStatement preparedStatement= connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, units);
+            preparedStatement.setInt(2, productId);
+            status=preparedStatement.executeUpdate()>0;
+        } catch (SQLException ex) {
+            logger.error(Constants.ERROR_LOG_TEMPLATE, Constants.ERROR, ex.getClass().getSimpleName(), ex.getMessage());
+        }
+        return status;
+    }
+
+    //update product price
+    public boolean updateProductDetails(ProductUpdateDto product){
+        String query="UPDATE products SET name=?, in_stock=?, price=? WHERE product_id=?";
+        boolean status=false;
+        try (Connection connection = ads.getConnection(); PreparedStatement preparedStatement= connection.prepareStatement(query)) {
+            preparedStatement.setString(1, product.name());
+            preparedStatement.setInt(2, product.inStock());
+            preparedStatement.setInt(3, product.price());
+            preparedStatement.setInt(4, product.productId());
+            status=preparedStatement.executeUpdate()>0;
+        } catch (SQLException ex) {
+            logger.error(Constants.ERROR_LOG_TEMPLATE, Constants.ERROR, ex.getClass().getSimpleName(), ex.getMessage());
+        }
+        return status;
+    }
+    //search for a product by name
+    public JsonObject searchProductByName(String name){
+        String query= """
+                SELECT p.product_id, p.name, p.in_stock, p.price, pd.full_description
+                FROM products p
+                INNER JOIN product_description pd ON p.description_id=pd.description_id
+                WHERE p.name LIKE ?""";
+        var productsJson=Json.createObjectBuilder();
+        var productsArray=Json.createArrayBuilder();
+        String nameLike='%' +name+ '%';
+        try (Connection connection = ads.getConnection(); PreparedStatement preparedStatement= connection.prepareStatement(query)) {
+            preparedStatement.setString(1, nameLike);
+            ResultSet resultSet= preparedStatement.executeQuery();
+            while (resultSet.next()){
+                var product=Json.createObjectBuilder()
+                        .add("productId", resultSet.getInt(1))
+                        .add("name", resultSet.getString(2))
+                        .add("inStock", resultSet.getInt(3))
+                        .add("price", resultSet.getInt(4))
+                        .add("description", resultSet.getString(5));
+                productsArray.add(product);
+            }
+
+        } catch (SQLException ex) {
+            logger.error(Constants.ERROR_LOG_TEMPLATE, Constants.ERROR, ex.getClass().getSimpleName(), ex.getMessage());
+        }
+        return productsJson.add("products", productsArray).build();
+    }
+    // update product description
+   public Boolean updateProductDescription(String description, int descriptionId){
+        String query="UPDATE product_description SET full_description=? WHERE description_id=?";
+        boolean status=false;
+       try (Connection connection = ads.getConnection(); PreparedStatement preparedStatement= connection.prepareStatement(query)) {
+           preparedStatement.setString(1, description);
+           preparedStatement.setInt(2, descriptionId);
+           status=preparedStatement.executeUpdate()>0;
+       } catch (SQLException ex) {
+           logger.error(Constants.ERROR_LOG_TEMPLATE, Constants.ERROR, ex.getClass().getSimpleName(), ex.getMessage());
+       }
+       return status;
+   }
 
 
 

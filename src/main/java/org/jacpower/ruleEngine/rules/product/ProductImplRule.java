@@ -8,6 +8,7 @@ import org.jacpower.enums.Modules;
 import org.jacpower.enums.RequestTypes;
 import org.jacpower.model.Merchant;
 import org.jacpower.model.Product;
+import org.jacpower.model.ProductUpdateDto;
 import org.jacpower.ruleEngine.interfaces.ServiceRule;
 import org.jacpower.ruleEngine.service.BeanValidatorService;
 import org.jacpower.ruleEngine.service.ProductService;
@@ -41,6 +42,17 @@ public class ProductImplRule implements ServiceRule {
                 else return Json.createObjectBuilder().add("message", String.valueOf(violations)).build();
             case GET_ALL_PRODUCTS:
                 return Util.buildResponse(productService.getAllProducts());
+            case GET_PRODUCTS_BY_CATEGORY:
+                return Util.buildResponse(productService.getProductsByCategory(requestBody.getString("category")));
+            case UPDATE_UNITS:
+                return Util.buildResponse(productService.updateProductUnits(requestBody));
+            case UPDATE_PRODUCT_DETAILS:
+                ProductUpdateDto productUpdate=new ProductUpdateDto(requestBody);
+                return  Util.buildResponse(productService.updateProduct(requestBody.getInt("userId"), productUpdate));
+            case FIND_PRODUCT_BY_NAME:
+                return Util.buildResponse(productService.findProductByName(requestBody.getString("name")));
+            case UPDATE_PRODUCT_DESCRIPTION:
+                return Util.buildResponse(productService.updateProductDescription(requestBody));
             default:
                 throw  new IllegalArgumentException("unexpected request type: " +requestType);
         }

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record Product(
         @NotNull(message = "userId cannot be null")
-        int userID,
+        int userId,
         @NotNull(message = "merchantId cannot be null")
         int merchantId,
         @NotNull(message = "categoryId cannot be null")
